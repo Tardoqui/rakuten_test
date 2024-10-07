@@ -91,4 +91,5 @@ dynamic_sites: A dictionary that specifies whether a site is dynamic and provide
 
 
 **To run the scraper, execute the following command in the terminal:**
+
 python scraper.py
