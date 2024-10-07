@@ -7,16 +7,36 @@ from google_sheet_reader import authenticate_google_sheets, fetch_urls_and_adver
 from sites_config import dynamic_sites
 from urllib.parse import urlparse
 
-# Function to check if the URL is active
+
 def is_url_active(url):
+    """
+    Check if the given URL is accessible.
+
+    Args:
+        url (str): The URL to check.
+
+    Returns:
+        bool: True if the URL is active (status code 200, 301, or 302), False otherwise.
+    """
+
     try:
         response = requests.head(url, timeout=30)  # Send a HEAD request to the URL
-        return response.status_code in [200, 301, 302]  # Check if the status code indicates a valid response
+        return response.status_code in [200, 301, 302]  
     except requests.RequestException:
-        return False  # Return False if there's an exception
+        return False  
 
-# Function to determine if the site is dynamic
 def is_dynamic_site(url, dynamic_sites_config):
+    """
+    Determine if the site is dynamic by checking its domain against a configuration.
+
+    Args:
+        url (str): The URL to check.
+        dynamic_sites_config (dict): Configuration dictionary for dynamic sites.
+
+    Returns:
+        bool: True if the site is dynamic, False otherwise.
+    """
+
     domain = urlparse(url).netloc  # Parse the domain from the URL
     site_info = dynamic_sites_config.get(domain)  # Check if the domain is in the dictionary
 
@@ -24,16 +44,37 @@ def is_dynamic_site(url, dynamic_sites_config):
         return site_info.get('is_dynamic', False)  # Return True if it's dynamic, otherwise False
     return False  # Return False if the site is not configured
 
-# Function to obtain selectors based on the site
+
 def get_selectors(url):
+    """
+    Obtain CSS selectors based on the site's domain.
+
+    Args:
+        url (str): The URL to check.
+
+    Returns:
+        dict: A dictionary of CSS selectors for the specified site.
+
+    Raises:
+        ValueError: If selectors are not configured for the site.
+    """
     domain = urlparse(url).netloc  # Extract the domain from the URL
     if domain in site_selectors:
         return site_selectors[domain]  # Return the selectors for the specified domain
     else:
-        raise ValueError(f"Selectors not configured for site: {domain}")  # Raise an error if not configured
+        raise ValueError(f"Selectors not configured for site: {domain}")  
 
-# Function for scraping static sites (requests + BeautifulSoup)
+
 def scrape_static_site(url):
+    """ 
+    Scrape data from a static site using requests and BeautifulSoup.
+
+    Args:
+        url (str): The URL of the static site to scrape.
+
+    Returns:
+        list: A list of dictionaries containing scraped data.
+    """
     selectors = get_selectors(url)  # Get the selectors for the site
     response = requests.get(url, timeout=10)  # Send a GET request to the URL
     soup = BeautifulSoup(response.content, 'html.parser')  # Parse the HTML content
@@ -61,8 +102,19 @@ def scrape_static_site(url):
         })
     return scraped_data  # Return the list of scraped data
 
-# Function for scraping multiple pages
+
 def scrape_multiple_pages(base_url, domain, pages=10):
+    """
+    Scrape multiple pages of a static site.
+
+    Args:
+        base_url (str): The base URL of the site.
+        domain (str): The domain of the site.
+        pages (int): The number of pages to scrape.
+
+    Returns:
+        list: A list of all scraped data across pages.
+    """
     selectors = get_selectors(base_url)  # Get the selectors for pagination
     pagination_format = selectors.get('pagination_format')  # Get the pagination format
     
@@ -79,8 +131,16 @@ def scrape_multiple_pages(base_url, domain, pages=10):
     
     return all_data  # Return all scraped data
 
-# Function to validate scraped data
 def validate_scraped_data(scraped_data):
+    """
+    Validate the structure of the scraped data.
+
+    Args:
+        scraped_data (list): List of scraped data dictionaries.
+
+    Returns:
+        tuple: (bool, dict) indicating whether data is valid and the first invalid item if any.
+    """
     required_fields = ['Title', 'Price', 'Availability']  # Define the required fields
     for item in scraped_data:
         for field in required_fields:
@@ -90,25 +150,49 @@ def validate_scraped_data(scraped_data):
 
 # Main scraping function
 def scrape_data(url, page_limit=10):
+    """
+    Scrape data from a given URL, determining if it is static or dynamic.
+
+    Args:
+        url (str): The URL to scrape.
+        page_limit (int): Maximum number of pages to scrape if static.
+
+    Returns:
+        list: List of scraped data.
+    """
     try:
         # Check if the site is dynamic or static
         if is_dynamic_site(url, dynamic_sites):
             print(f"Scraping dynamic content from {url}")
-            return scrape_dynamic_site(url)  # Call the function for scraping dynamic sites
+            return scrape_dynamic_site(url)  # Call the function 
         else:
             print(f"Scraping static content from {url}")
             domain = urlparse(url).netloc
-            return scrape_multiple_pages(url, domain, pages=page_limit)  # Call the function for scraping static sites
+            return scrape_multiple_pages(url, domain, pages=page_limit)  # Call the function 
     except Exception as e:
-        print(f"Error scraping {url}: {e}")  # Log any errors encountered
-        return []  # Return an empty list on error
+        print(f"Error scraping {url}: {e}") 
+        return []  
 
 # Function to log errors for inactive URLs
 def log_inactive_url(advertiser_name, url, error_message, sheet):
+    """
+    Log inactive URLs in the specified Google Sheet.
+
+    Args:
+        advertiser_name (str): Name of the advertiser.
+        url (str): Inactive URL.
+        error_message (str): Message explaining why the URL is inactive.
+        sheet: Google Sheets worksheet to log the error.
+    """
     sheet.append_row([advertiser_name, url, error_message])  # Log the inactive URL in the sheet
 
-# Main function to execute the complete process
 def main():
+    """
+    Main function to execute the scraping process.
+
+    Authenticates with Google Sheets, fetches URLs to scrape,
+    and logs results and errors.
+    """
     # Configure the path to the credentials
     credentials_path = '/home/henrique-tardoqui/Downloads/rakuten-test-437701-ec863dca066c.json'
 
@@ -124,8 +208,8 @@ def main():
     scraping_report_sheet = client.open_by_key(spreadsheet_id).worksheet('Scraping Report')
 
     total_urls = len(urls_data)  # Get the total number of URLs
-    total_scraped = 0  # Initialize a counter for scraped data
-    total_errors = 0  # Initialize a counter for errors
+    total_scraped = 0  
+    total_errors = 0  
     
     for entry in urls_data:
         url = entry['URL']  # Extract the URL
