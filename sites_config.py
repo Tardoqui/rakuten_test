@@ -1,5 +1,7 @@
+# Dynamic Sites Configuration
+# This dictionary identifies whether certain sites are dynamic or static,
+# which dictates how they will be scraped.
 
-# Dynamic Sites dictionary
 dynamic_sites = {
     'dynamic-site.com': {
         'description': 'A site that requires dynamic content loading.',
