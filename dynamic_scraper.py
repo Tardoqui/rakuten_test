@@ -2,8 +2,17 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 
-# Function to scrape dynamic content using Selenium
+
 def scrape_dynamic_site(url):
+    """
+    Scrape data from a dynamic site using Selenium.
+
+    Args:
+        url (str): The URL of the dynamic site to scrape.
+
+    Returns:
+        list: A list of dictionaries containing scraped data from the dynamic site.
+    """
     # Initialize the Chrome WebDriver
     driver = webdriver.Chrome(executable_path='/path/to/chromedriver')
     
