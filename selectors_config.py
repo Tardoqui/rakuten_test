@@ -1,4 +1,5 @@
 # Selectors Dictionary for Web Scraping
+# This configuration defines CSS selectors for different websites used in the scraping process.
 
 site_selectors = {
     'books.toscrape.com': {  # Configuration for the books.toscrape.com site
